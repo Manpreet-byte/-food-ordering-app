@@ -123,9 +123,24 @@ const sendOrderConfirmationEmail = async (email, orderDetails) => {
 
   const itemsList = items.map(item => `
     <tr>
-      <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.name}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
-      <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${(item.price * item.quantity).toFixed(2)}</td>
+      <td style="padding: 15px; border-bottom: 1px solid #eee;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <img src="${item.image || item.imageUrl || 'https://via.placeholder.com/80x80?text=Food'}" 
+               alt="${item.name}" 
+               style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+          <div>
+            <strong style="display: block; font-size: 16px; color: #1f2937;">${item.name}</strong>
+            <span style="color: #6b7280; font-size: 14px;">₹${item.price.toFixed(2)} each</span>
+            ${item.category ? `<br/><span style="display: inline-block; margin-top: 4px; padding: 2px 8px; background: #fef3c7; color: #92400e; font-size: 11px; border-radius: 12px;">${item.category}</span>` : ''}
+          </div>
+        </div>
+      </td>
+      <td style="padding: 15px; border-bottom: 1px solid #eee; text-align: center; font-weight: bold; color: #4b5563;">
+        ×${item.quantity}
+      </td>
+      <td style="padding: 15px; border-bottom: 1px solid #eee; text-align: right; font-weight: bold; color: #059669; font-size: 16px;">
+        ₹${(item.price * item.quantity).toFixed(2)}
+      </td>
     </tr>
   `).join('');
 
@@ -133,65 +148,229 @@ const sendOrderConfirmationEmail = async (email, orderDetails) => {
     <!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: #10b981; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
-        .content { background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px; }
-        .order-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .button { background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; }
+        body { 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          line-height: 1.6; 
+          color: #333; 
+          margin: 0;
+          padding: 0;
+          background-color: #f3f4f6;
+        }
+        .container { 
+          max-width: 650px; 
+          margin: 20px auto; 
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header { 
+          background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+          color: white; 
+          padding: 30px 20px; 
+          text-align: center; 
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          font-weight: 700;
+        }
+        .content { 
+          padding: 30px; 
+        }
+        .order-box { 
+          background: #f9fafb; 
+          padding: 25px; 
+          border-radius: 8px; 
+          margin: 20px 0; 
+          border: 1px solid #e5e7eb;
+        }
+        .order-box h3 {
+          margin-top: 0;
+          color: #1f2937;
+          font-size: 20px;
+        }
+        .order-box h4 {
+          color: #374151;
+          margin-top: 25px;
+          margin-bottom: 15px;
+          font-size: 16px;
+          border-bottom: 2px solid #e5e7eb;
+          padding-bottom: 8px;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+        }
+        .info-label {
+          color: #6b7280;
+          font-weight: 500;
+        }
+        .info-value {
+          color: #1f2937;
+          font-weight: 600;
+        }
+        table { 
+          width: 100%; 
+          border-collapse: collapse; 
+          margin-top: 15px;
+          background: white;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+        thead {
+          background: #f3f4f6;
+        }
+        th {
+          padding: 12px;
+          text-align: left;
+          font-weight: 600;
+          color: #374151;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        tfoot {
+          background: #fef3c7;
+          border-top: 2px solid #f59e0b;
+        }
+        tfoot td {
+          padding: 18px 15px;
+          font-weight: 700;
+          font-size: 18px;
+        }
+        .delivery-info {
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+          margin-top: 15px;
+          border-left: 4px solid #f97316;
+        }
+        .delivery-info p {
+          margin: 8px 0;
+        }
+        .badge {
+          display: inline-block;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+          margin-left: 8px;
+        }
+        .badge-success {
+          background: #d1fae5;
+          color: #065f46;
+        }
+        .badge-warning {
+          background: #fef3c7;
+          color: #92400e;
+        }
+        .footer { 
+          text-align: center; 
+          padding: 25px; 
+          color: #6b7280; 
+          font-size: 13px; 
+          background: #f9fafb;
+          border-top: 1px solid #e5e7eb;
+        }
+        .footer p {
+          margin: 5px 0;
+        }
+        .emoji {
+          font-size: 24px;
+          margin-right: 8px;
+        }
+        @media only screen and (max-width: 600px) {
+          .container {
+            margin: 0;
+            border-radius: 0;
+          }
+          .content {
+            padding: 20px;
+          }
+          table {
+            font-size: 14px;
+          }
+        }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>🎉 Order Confirmed!</h1>
+          <h1><span class="emoji">🎉</span>Order Confirmed!</h1>
+          <p style="margin: 10px 0 0 0; font-size: 16px; opacity: 0.95;">Thank you for your order</p>
         </div>
         <div class="content">
-          <h2>Hi ${customerName}! 👋</h2>
-          <p>Thank you for your order! We've received it and are getting it ready.</p>
+          <h2 style="color: #1f2937; margin-top: 0;">Hi ${customerName}! 👋</h2>
+          <p style="font-size: 15px; color: #4b5563;">We've received your order and our kitchen is getting it ready with love and care!</p>
           
           <div class="order-box">
-            <h3>Order Details</h3>
-            <p><strong>Order ID:</strong> #${orderId}</p>
-            <p><strong>Estimated Delivery:</strong> ${deliveryTimeText}</p>
-            <p><strong>Payment Method:</strong> ${paymentMethod === 'cash' ? 'Cash on Delivery' : paymentMethod.toUpperCase()}</p>
+            <h3>Order Summary</h3>
+            <div class="info-row">
+              <span class="info-label">Order ID:</span>
+              <span class="info-value">#${orderId}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Estimated Delivery:</span>
+              <span class="info-value">${deliveryTimeText}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Payment Method:</span>
+              <span class="info-value">${paymentMethod === 'cash' ? 'Cash on Delivery 💵' : paymentMethod.toUpperCase()} ${paymentMethod !== 'cash' ? '<span class="badge badge-success">Paid</span>' : ''}</span>
+            </div>
             
-            <h4 style="margin-top: 20px;">Items Ordered:</h4>
+            <h4>🍽️ Your Delicious Items:</h4>
             <table>
               <thead>
-                <tr style="background: #f3f4f6;">
-                  <th style="padding: 10px; text-align: left;">Item</th>
-                  <th style="padding: 10px; text-align: center;">Quantity</th>
-                  <th style="padding: 10px; text-align: right;">Price</th>
+                <tr>
+                  <th style="width: 55%;">Item</th>
+                  <th style="width: 20%; text-align: center;">Qty</th>
+                  <th style="width: 25%; text-align: right;">Price</th>
                 </tr>
               </thead>
               <tbody>
                 ${itemsList}
               </tbody>
               <tfoot>
-                <tr style="font-weight: bold; background: #f3f4f6;">
-                  <td colspan="2" style="padding: 15px;">Total</td>
-                  <td style="padding: 15px; text-align: right; color: #10b981; font-size: 18px;">$${totalAmount}</td>
+                <tr>
+                  <td colspan="2" style="color: #92400e;">
+                    <strong>Total Amount</strong>
+                  </td>
+                  <td style="text-align: right; color: #f97316;">
+                    ₹${totalAmount}
+                  </td>
                 </tr>
               </tfoot>
             </table>
             
-            <h4 style="margin-top: 20px;">Delivery Information:</h4>
-            <p><strong>Address:</strong> ${address}</p>
-            <p><strong>Phone:</strong> ${phone}</p>
+            <h4>📍 Delivery Information:</h4>
+            <div class="delivery-info">
+              <p><strong style="color: #374151;">Address:</strong> ${address}</p>
+              <p><strong style="color: #374151;">Phone:</strong> ${phone}</p>
+            </div>
           </div>
           
-          <p>We'll send you updates as your order progresses.</p>
-          <p>If you have any questions, feel free to contact us!</p>
+          <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; border-radius: 6px; margin: 20px 0;">
+            <p style="margin: 0; color: #065f46; font-size: 14px;">
+              <strong>✨ Order Status Updates:</strong> We'll keep you posted via email and SMS as your order progresses through preparation, cooking, and delivery!
+            </p>
+          </div>
           
-          <p style="margin-top: 30px;">Enjoy your meal! 🍕😋</p>
+          <p style="color: #4b5563; margin-top: 25px;">If you have any questions or special requests, feel free to contact us!</p>
+          
+          <p style="margin-top: 30px; font-size: 18px; color: #1f2937; font-weight: 600;">
+            Enjoy your delicious meal! 🍕🍔🍝😋
+          </p>
         </div>
         <div class="footer">
-          <p>© 2025 Food Ordering App. All rights reserved.</p>
-          <p>This is an automated email. Please do not reply.</p>
+          <p style="font-weight: 600; color: #374151;">Food Ordering App</p>
+          <p>© 2025 All rights reserved.</p>
+          <p style="margin-top: 10px;">This is an automated email. Please do not reply directly to this message.</p>
+          <p style="margin-top: 8px; font-size: 12px;">Questions? Contact us at ${process.env.EMAIL_USER || 'support@foodapp.com'}</p>
         </div>
       </div>
     </body>
